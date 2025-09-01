@@ -1,6 +1,6 @@
 import { Tabs, router } from "expo-router"
 import { View, Text, Platform } from "react-native"
-import { Feather, AntDesign } from "@expo/vector-icons"
+import { Feather, AntDesign, MaterialIcons } from "@expo/vector-icons"
 import { useEffect } from "react"
 import { COLORS, FONTS, SIZES } from "../../constants"
 import { useSession } from "../../context/SessionContext"
@@ -43,8 +43,8 @@ export default function TabLayout() {
                                     width: SIZES.width / 3
                                 }}
                             >
-                                <AntDesign
-                                    name="wallet"
+                                <MaterialIcons
+                                    name="work"
                                     size={24}
                                     color={focused ? COLORS.primary : COLORS.gray3}
                                 />
@@ -54,7 +54,7 @@ export default function TabLayout() {
                                         color: focused ? COLORS.primary : COLORS.gray3
                                     }}
                                 >
-                                    Cartera
+                                    Ejecutivos
                                 </Text>
                             </View>
                         )

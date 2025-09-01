@@ -1,7 +1,7 @@
 {
     "expo": {
-        "name": "Más con Menos",
-        "slug": "MasConMenos",
+        "name": "Más con Menos - Gerentes",
+        "slug": "MasConMenos-gerentes",
         "version": "1.0.0",
         "orientation": "portrait",
         "icon": "./assets/images/logos/icon.png",
@@ -25,7 +25,7 @@
                 "foregroundImage": "./assets/images/logos/icon.png",
                 "backgroundColor": "#ffffff"
             },
-            "package": "com.mcm_dev_01.MasConMenos",
+            "package": "com.mcm_dev_01.MasConMenos-gerentes",
             "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
         },
         "web": {
@@ -44,16 +44,8 @@
                 }
             ]
         ],
-        "extra": {
-            "eas": {
-                "projectId": "f60752da-4dcc-4a21-a7ce-5c0dda96d9a2"
-            }
-        },
         "runtimeVersion": {
             "policy": "appVersion"
-        },
-        "updates": {
-            "url": "https://u.expo.dev/f60752da-4dcc-4a21-a7ce-5c0dda96d9a2"
         }
     }
 }

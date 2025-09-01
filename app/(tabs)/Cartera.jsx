@@ -72,7 +72,7 @@ export default function Cartera() {
 
             <View className="bg-white flex-1 rounded-t-3xl">
                 <View className="flex-row justify-between items-center border-b border-gray-200 px-3">
-                    <Text className="text-lg font-semibold my-5">Mi cartera</Text>
+                    <Text className="text-lg font-semibold my-5">Supervision de ejecutivos</Text>
 
                     <View className="flex-row items-center">
                         <Pressable
@@ -133,7 +133,7 @@ export default function Cartera() {
                             <Text className="text-gray-500">
                                 {terminoBusqueda.length >= 3
                                     ? "No se encontraron resultados para la búsqueda"
-                                    : "No tiene clientes asignados"}
+                                    : "No tiene personal supervisado"}
                             </Text>
                         </View>
                     ) : (
