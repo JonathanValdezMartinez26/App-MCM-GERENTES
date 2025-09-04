@@ -6,22 +6,21 @@ const slides = [
     {
         id: 1,
         imagen: images.intro1,
-        title: "Consulta",
-        description:
-            "Revisa toda la información de tu cartera de clientes, registra pagos y mantente al día."
+        title: "Supervisa",
+        description: "Revisa la actividad de los ejecutivos de tu sucursal a cargo."
     },
     {
         id: 2,
         imagen: images.intro2,
-        title: "Cada visita cuenta",
-        description: "Lleva el control y mantén un registro de tus visitas."
+        title: "Analiza",
+        description: "Consulta reportes en tiempo real."
     },
     {
         id: 3,
         imagen: images.intro3,
         title: "¿Estás listo para comenzar?",
         description:
-            "Ingresa el usuario y contraseña que te proporcionó tu gerente de sucursal o el equipo a soporte operativo"
+            "Ingresa el usuario y contraseña que te proporcionó el equipo a soporte operativo"
     }
 ]
 
@@ -45,15 +44,10 @@ export default function IntroSlides({ onFinish }) {
         >
             {/* Contenido del slide actual */}
             <View className="flex-1 justify-center items-center">
-                <View
-                    // className="w-32 h-32 rounded-full mb-8 justify-center items-center"
-                    className="w-48 h-48 mb-8 justify-center items-center"
-                    // style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
-                >
-                    {/* <Text className="text-white text-4xl font-bold">{slides[currentSlide].id}</Text> */}
+                <View className="w-48 h-48 mb-8 justify-center items-center">
                     <Animated.Image
                         source={slides[currentSlide].imagen}
-                        className="w-32 h-32 rounded-full"
+                        className="w-48 h-48 rounded-full"
                         resizeMode="contain"
                     />
                 </View>

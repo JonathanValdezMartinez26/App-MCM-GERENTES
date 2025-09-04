@@ -23,9 +23,9 @@
         "android": {
             "adaptiveIcon": {
                 "foregroundImage": "./assets/images/logos/icon.png",
-                "backgroundColor": "#ffffff"
+                "backgroundColor": "#a93439"
             },
-            "package": "com.mcm_dev_01.MasConMenos-gerentes",
+            "package": "com.mcm_dev_01.MasConMenos_gerentes",
             "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
         },
         "web": {

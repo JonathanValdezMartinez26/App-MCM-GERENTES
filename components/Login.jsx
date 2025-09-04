@@ -137,7 +137,7 @@ export default function Login() {
                     {validando ? (
                         <Feather name="loader" size={20} color="white" className="animate-spin" />
                     ) : (
-                        <Text className="text-white font-medium">Acceso Gerentes</Text>
+                        <Text className="text-white font-medium">Ingresar</Text>
                     )}
                 </Pressable>
                 <CustomAlert ref={alertRef} />
