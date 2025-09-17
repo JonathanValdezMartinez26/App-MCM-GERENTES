@@ -12,6 +12,7 @@ export const useSession = () => {
 export const SessionProvider = ({ children }) => {
     const [token, setToken] = useState(null)
     const [usuario, setUsuario] = useState(null)
+    const [keyMaps, setKeyMaps] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [introOK, setIntroOK] = useState(false)
 
@@ -26,6 +27,9 @@ export const SessionProvider = ({ children }) => {
                     setToken(storedToken)
                     const storedUser = await storage.getUser()
                     if (storedUser) setUsuario(storedUser)
+
+                    const storedKeyMaps = await storage.getKeyMaps()
+                    if (storedKeyMaps) setKeyMaps(storedKeyMaps)
                 }
             } catch (error) {
                 console.error("Error checking stored token:", error)
@@ -36,7 +40,7 @@ export const SessionProvider = ({ children }) => {
         checkToken()
     }, [])
 
-    const login = async (userToken, userData = null) => {
+    const login = async (userToken, userData = null, mapsKey = null) => {
         try {
             await storage.saveToken(userToken)
             setToken(userToken)
@@ -44,6 +48,11 @@ export const SessionProvider = ({ children }) => {
             if (userData) {
                 await storage.saveUser(userData)
                 setUsuario(userData)
+            }
+
+            if (mapsKey) {
+                await storage.saveKeyMaps(mapsKey)
+                setKeyMaps(mapsKey)
             }
             return true
         } catch (error) {
@@ -57,6 +66,7 @@ export const SessionProvider = ({ children }) => {
             await storage.clearAll()
             setToken(null)
             setUsuario(null)
+            setKeyMaps(null)
             return true
         } catch (error) {
             console.error("Error en logout:", error)
@@ -76,6 +86,7 @@ export const SessionProvider = ({ children }) => {
     const value = {
         token,
         usuario,
+        keyMaps,
         isLoading,
         introOK,
         login,

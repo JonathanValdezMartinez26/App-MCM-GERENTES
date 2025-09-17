@@ -14,10 +14,9 @@ import { Feather, MaterialIcons } from "@expo/vector-icons"
 import { SafeAreaInsetsContext } from "react-native-safe-area-context"
 import numeral from "numeral"
 import { useCustomAlert } from "../../hooks/useCustomAlert"
-import { useCartera } from "../../context/CarteraContext"
 import { usePago } from "../../context/PagoContext"
 import { pagosPendientes, catalogos, registroPagos } from "../../services"
-import CustomAlert, { showAlert } from "../../components/CustomAlert"
+import CustomAlert from "../../components/CustomAlert"
 import * as ImagePicker from "expo-image-picker"
 import * as Location from "expo-location"
 import { generarIdPago } from "../../utils/pagoId"
@@ -29,7 +28,6 @@ export default function Pago() {
     const insets = useContext(SafeAreaInsetsContext)
     const { alertRef, showError, showSuccess, showInfo, showWarning, showWait, hideWait } =
         useCustomAlert()
-    const { validarCredito, obtenerInfoCredito } = useCartera()
 
     // Estado para controlar si los parámetros son válidos (vienen con timestamp reciente)
     const [parametrosValidos, setParametrosValidos] = useState(false)
@@ -73,7 +71,7 @@ export default function Pago() {
     // Efecto para validar el número de crédito cuando cambia
     useEffect(() => {
         if (credito.length === 6) {
-            const resultado = validarCredito(credito)
+            const resultado = null
             setCreditoValido(resultado.valido)
 
             if (resultado.valido) {
@@ -99,7 +97,7 @@ export default function Pago() {
             setCreditoValido(null)
             setInfoCredito(null)
         }
-    }, [credito, validarCredito, esDetalleCredito])
+    }, [credito, esDetalleCredito])
 
     // Cargar tipos de pago desde catálogos
     useEffect(() => {

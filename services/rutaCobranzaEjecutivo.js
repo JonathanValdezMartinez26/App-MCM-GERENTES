@@ -1,0 +1,50 @@
+import { apiClient, API_CONFIG } from "./api"
+
+export const rutaCobranzaEjecutivo = {
+    /**
+     * Obtiene la ruta de cobranza de un ejecutivo específico
+     * @param {string} ejecutivo - Código del ejecutivo
+     * @param {string} fecha - Fecha en formato yyyy-mm-dd
+     * @returns {Promise<{success: boolean, data: any, error?: string}>}
+     */
+    obtener: async (ejecutivo, fecha) => {
+        try {
+            const body = {
+                ejecutivo,
+                fecha
+            }
+
+            const response = await apiClient.post(
+                API_CONFIG.ENDPOINTS.RUTA_COBRANZA_EJECUTIVO,
+                body
+            )
+
+            if (response.status === API_CONFIG.HTTP_STATUS.OK) {
+                return {
+                    success: true,
+                    data: response.data
+                }
+            } else {
+                return {
+                    success: false,
+                    error: "Error al obtener la ruta de cobranza del ejecutivo"
+                }
+            }
+        } catch (error) {
+            console.error("Error en rutaCobranzaEjecutivo.obtener:", error)
+
+            if (error.response?.status === API_CONFIG.HTTP_STATUS.UNAUTHORIZED) {
+                return {
+                    success: false,
+                    error: "No autorizado",
+                    unauthorized: true
+                }
+            }
+
+            return {
+                success: false,
+                error: error.message || "Error de conexión"
+            }
+        }
+    }
+}

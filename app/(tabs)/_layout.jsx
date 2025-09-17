@@ -31,7 +31,7 @@ export default function TabLayout() {
             }}
         >
             <Tabs.Screen
-                name="Cartera"
+                name="ResumenCobranza"
                 options={{
                     title: "",
                     tabBarIcon: ({ focused }) => {
@@ -54,7 +54,7 @@ export default function TabLayout() {
                                         color: focused ? COLORS.primary : COLORS.gray3
                                     }}
                                 >
-                                    Ejecutivos
+                                    Resumen
                                 </Text>
                             </View>
                         )

@@ -12,7 +12,9 @@ export const API_CONFIG = {
         DETALLE_CREDITO: "/DetalleMovimientosCliente",
         AGREGAR_PAGO_CLIENTE: "/AgregarPagoCliente",
         CATALOGO_TIPOS_PAGO: "/CatalogoTiposPago",
-        RESUMEN_DIARIO: "/ResumenDiario"
+        RESUMEN_DIARIO: "/ResumenDiario",
+        RESUMEN_COBRANZA: "/ResumenCobranza",
+        RUTA_COBRANZA_EJECUTIVO: "/RutaCobranzaEjecutivo"
     },
 
     HTTP_STATUS: {
@@ -30,8 +32,7 @@ export const API_CONFIG = {
         timeout: 10000, // 10 segundos
         headers: {
             Accept: "application/json",
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache"
+            "Content-Type": "application/json"
         }
     }
 }

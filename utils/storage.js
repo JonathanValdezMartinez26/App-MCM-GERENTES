@@ -26,7 +26,7 @@ export async function removeUser() {
 }
 
 export async function clearAll() {
-    await AsyncStorage.multiRemove(["token", "user", "intro_OK"])
+    await AsyncStorage.multiRemove(["token", "user", "intro_OK", "key_maps"])
 }
 
 export async function setIntroOK() {
@@ -47,6 +47,18 @@ export async function getItem(key) {
     return item ? JSON.parse(item) : null
 }
 
+export async function saveKeyMaps(keyMaps) {
+    await AsyncStorage.setItem("key_maps", keyMaps)
+}
+
+export async function getKeyMaps() {
+    return await AsyncStorage.getItem("key_maps")
+}
+
+export async function removeKeyMaps() {
+    await AsyncStorage.removeItem("key_maps")
+}
+
 export default {
     saveToken,
     getToken,
@@ -58,5 +70,8 @@ export default {
     setIntroOK,
     getIntroStatus,
     setItem,
-    getItem
+    getItem,
+    saveKeyMaps,
+    getKeyMaps,
+    removeKeyMaps
 }

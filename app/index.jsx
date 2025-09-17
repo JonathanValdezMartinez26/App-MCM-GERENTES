@@ -15,10 +15,10 @@ export default function index() {
     const { token, isLoading, introOK, introMostrada } = useSession()
 
     useEffect(() => {
-        // Si ya terminó de cargar y hay token, redirigir a Cartera
+        // Si ya terminó de cargar y hay token, redirigir a ResumenCobranza
         if (!isLoading && token) {
             sesion.inicializarSesion()
-            router.replace("/(tabs)/Cartera")
+            router.replace("/(tabs)/ResumenCobranza")
         }
     }, [isLoading, token])
 
