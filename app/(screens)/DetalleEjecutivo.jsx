@@ -10,7 +10,7 @@ numeral.zeroFormat(0)
 numeral.nullFormat(0)
 
 export default function DetalleEjecutivo() {
-    const { ejecutivo, dia } = useLocalSearchParams()
+    const { ejecutivo, dia, fecha } = useLocalSearchParams()
     const [datosEjecutivo, setDatosEjecutivo] = useState(null)
     const [loading, setLoading] = useState(true)
     const insets = useContext(SafeAreaInsetsContext)
@@ -34,7 +34,8 @@ export default function DetalleEjecutivo() {
                 pathname: "/(screens)/RutaEjecutivo",
                 params: {
                     ejecutivo: datosEjecutivo.ASESOR,
-                    nombre: datosEjecutivo.NOMBRE_ASESOR
+                    nombre: datosEjecutivo.NOMBRE_ASESOR,
+                    fecha: fecha
                 }
             })
         }
@@ -272,7 +273,9 @@ export default function DetalleEjecutivo() {
                                 {datosEjecutivo.NOMBRE_ASESOR}
                             </Text>
                             <Text className="text-base text-gray-600">
-                                {dia} - {datosEjecutivo.SUCURSAL}
+                                <Text className="text-gray-600 text-sm">
+                                    {dia} - {datosEjecutivo.SUCURSAL} - {fecha}
+                                </Text>
                             </Text>
                         </View>
                     </View>

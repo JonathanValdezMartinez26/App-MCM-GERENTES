@@ -1,4 +1,5 @@
 import { apiClient, API_CONFIG } from "./api"
+import storage from "../utils/storage"
 
 export const rutaCobranzaEjecutivo = {
     /**
@@ -9,17 +10,21 @@ export const rutaCobranzaEjecutivo = {
      */
     obtener: async (ejecutivo, fecha) => {
         try {
-            const body = {
-                ejecutivo,
-                fecha
-            }
-
+            const token = await storage.getToken()
             const response = await apiClient.post(
                 API_CONFIG.ENDPOINTS.RUTA_COBRANZA_EJECUTIVO,
-                body
+                {
+                    ejecutivo,
+                    fecha
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
             )
 
-            if (response.status === API_CONFIG.HTTP_STATUS.OK) {
+            if (response.data) {
                 return {
                     success: true,
                     data: response.data
@@ -32,15 +37,6 @@ export const rutaCobranzaEjecutivo = {
             }
         } catch (error) {
             console.error("Error en rutaCobranzaEjecutivo.obtener:", error)
-
-            if (error.response?.status === API_CONFIG.HTTP_STATUS.UNAUTHORIZED) {
-                return {
-                    success: false,
-                    error: "No autorizado",
-                    unauthorized: true
-                }
-            }
-
             return {
                 success: false,
                 error: error.message || "Error de conexión"

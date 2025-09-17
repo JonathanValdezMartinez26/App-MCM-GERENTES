@@ -87,12 +87,36 @@ export default function ResumenCobranza() {
         setExpandedDay(expandedDay === dia ? null : dia)
     }
 
+    const obtenerFechaDia = (dia) => {
+        const hoy = new Date()
+        const diasSemana = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"]
+        const indiceDia = diasSemana.indexOf(dia)
+
+        // Obtener el lunes de la semana actual
+        const diaSemana = hoy.getDay() // 0 = domingo, 1 = lunes, etc.
+        const diasHastaLunes = diaSemana === 0 ? -6 : 1 - diaSemana
+        const lunesActual = new Date(hoy)
+        lunesActual.setDate(hoy.getDate() + diasHastaLunes)
+
+        // Calcular la fecha del día específico
+        const fechaDia = new Date(lunesActual)
+        fechaDia.setDate(lunesActual.getDate() + indiceDia)
+
+        const year = fechaDia.getFullYear()
+        const month = String(fechaDia.getMonth() + 1).padStart(2, "0")
+        const day = String(fechaDia.getDate()).padStart(2, "0")
+
+        return `${year}-${month}-${day}`
+    }
+
     const verDetalleEjecutivo = (ejecutivo, dia) => {
+        const fechaDia = obtenerFechaDia(dia)
         router.push({
             pathname: "/(screens)/DetalleEjecutivo",
             params: {
                 ejecutivo: JSON.stringify(ejecutivo),
-                dia: dia
+                dia: dia,
+                fecha: fechaDia
             }
         })
     }
