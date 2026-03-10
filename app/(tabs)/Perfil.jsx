@@ -59,19 +59,16 @@ export default function Perfil() {
 
     return (
         <View className="flex-1">
-            <View className="h-[25%] bg-primary mb-20">
-                <View className="absolute top-36 full w-full items-center">
+            <View className="h-60 bg-primary">
+                <View className="absolute top-36 self-center">
                     <Image
                         source={images.avatar}
                         className="w-28 h-28 rounded-full border-4 border-white"
                     />
-                    <Text className="text-center text-lg font-semibold">
-                        {usuario?.rol || "Gerente"}
-                    </Text>
                 </View>
             </View>
 
-            <View className="items-center mt-10">
+            <View className="mt-16 items-center">
                 <Text className="text-lg font-bold text-gray-900">
                     {usuario?.nombre || "Ejecutivo"}
                 </Text>

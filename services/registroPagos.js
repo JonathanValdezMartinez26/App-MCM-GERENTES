@@ -71,6 +71,7 @@ export const registroPagos = {
                 response.status === API_CONFIG.HTTP_STATUS.OK ||
                 response.status === API_CONFIG.HTTP_STATUS.CREATED
             ) {
+                this.limpiarFotoTemporal(pagoData.fotoComprobante)
                 return {
                     success: true,
                     data: response.data,
@@ -84,12 +85,25 @@ export const registroPagos = {
                 }
             }
         } catch (error) {
-            console.error("Error al registrar pago:", error?.response?.data?.error)
+            console.error("Error al registrar pago:", error.message)
             return {
                 success: false,
-                error: error.response?.data?.error || error.message || "Error de conexión",
+                error: error.response?.data?.message || error.message || "Error de conexión",
                 pagoId: pagoData.id
             }
+        }
+    },
+
+    async limpiarFotoTemporal(uri) {
+        try {
+            if (uri && uri.startsWith("file://")) {
+                const fileInfo = await FileSystem.getInfoAsync(uri)
+                if (fileInfo.exists) {
+                    await FileSystem.deleteAsync(uri, { idempotent: true })
+                }
+            }
+        } catch (error) {
+            console.log("No se pudo eliminar foto temporal:", error.message)
         }
     },
 

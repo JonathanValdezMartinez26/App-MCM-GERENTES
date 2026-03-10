@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from "react"
+import { useContext, useState, useEffect, useRef } from "react"
 import {
     View,
     Text,
@@ -7,7 +7,8 @@ import {
     ScrollView,
     Animated,
     Image,
-    Platform
+    Platform,
+    Modal
 } from "react-native"
 import { router } from "expo-router"
 import { Feather, MaterialIcons } from "@expo/vector-icons"
@@ -17,8 +18,10 @@ import { useCustomAlert } from "../../hooks/useCustomAlert"
 import { usePago } from "../../context/PagoContext"
 import { pagosPendientes, catalogos, registroPagos, consultaClientes } from "../../services"
 import CustomAlert from "../../components/CustomAlert"
-import * as ImagePicker from "expo-image-picker"
+import * as ImageManipulator from "expo-image-manipulator"
+import { CameraView, useCameraPermissions } from "expo-camera"
 import * as Location from "expo-location"
+import * as FileSystem from "expo-file-system"
 import { generarIdPago } from "../../utils/pagoId"
 import storage from "../../utils/storage"
 
@@ -45,7 +48,12 @@ export default function Pago() {
     const [showTipoSelect, setShowTipoSelect] = useState(false)
     const [montoFormateado, setMontoFormateado] = useState("")
     const [focusedField, setFocusedField] = useState("")
-
+    const [camaraVisible, setCamaraVisible] = useState(false)
+    const [camaraLista, setCamaraLista] = useState(false)
+    const [camaraCargando, setCamaraCargando] = useState(false)
+    const [flashActivo, setFlashActivo] = useState(false)
+    const [permisosCamara, solicitarPermisosCamara] = useCameraPermissions()
+    const camaraRef = useRef(null)
     const scaleAnim = useState(new Animated.Value(1))[0]
     const shakeAnim = useState(new Animated.Value(0))[0]
 
@@ -64,12 +72,12 @@ export default function Pago() {
                         setCreditoValido(true)
                         setInfoCredito(resultado.cliente)
 
-                        // Auto-llenar el ciclo si el crédito es válido y no viene de DetalleCredito
+                        // Auto-llenar el ciclo si el crédito es válido
                         if (resultado.cliente.ciclo) {
                             setCiclo(resultado.cliente.ciclo.toString())
                         }
 
-                        // Auto-llenar el monto con pago_semanal si no viene de DetalleCredito
+                        // Auto-llenar el monto con pago_semanal
                         if (resultado.cliente.pago_semanal) {
                             setMonto(resultado.cliente.pago_semanal.toString())
                             setTipoPago("P") // Establecer como PAGO por defecto
@@ -105,7 +113,6 @@ export default function Pago() {
         validarCredito()
     }, [credito])
 
-    // Cargar tipos de pago desde catálogos
     useEffect(() => {
         const cargarTiposPago = async () => {
             try {
@@ -120,7 +127,6 @@ export default function Pago() {
                 ])
             }
         }
-
         cargarTiposPago()
     }, [])
 
@@ -266,14 +272,11 @@ export default function Pago() {
                 : "Confirmar Registro"
         const confirmacionMensaje = `¿Confirma que desea registrar un ${tipoSeleccionado?.descripcion.toLowerCase()} de ${montoFormateado} para el crédito ${credito}?`
 
-        // Mostrar confirmación antes de procesar
         alerta(titulo, confirmacionMensaje, [
             {
                 text: "Cancelar",
                 style: "cancel",
-                onPress: () => {
-                    // No hacer nada, solo cerrar el modal
-                }
+                onPress: () => {}
             },
             {
                 text: "Confirmar",
@@ -282,7 +285,6 @@ export default function Pago() {
                     try {
                         // Mostrar modal de espera al inicio del proceso
                         showWait("Procesando Pago", "Registrando el pago, por favor espere...")
-                        // Prueba cambio repositorio
                         // Obtener ubicación antes de guardar el pago
                         const ubicacion = await obtenerUbicacion()
                         if (!ubicacion) {
@@ -367,7 +369,6 @@ export default function Pago() {
                         }
                     } catch (error) {
                         console.error("Error al procesar pago:", error)
-                        hideWait()
                         showError("Error", "Ocurrió un error inesperado al procesar el pago.", [
                             { text: "OK", style: "default" }
                         ])
@@ -382,43 +383,95 @@ export default function Pago() {
         return numero
     }
 
-    const capturarFoto = async () => {
+    const limpiarFotoTemporal = async (uri) => {
         try {
-            const { status } = await ImagePicker.requestCameraPermissionsAsync()
-
-            if (status !== "granted") {
-                showError(
-                    "Permisos Requeridos",
-                    "Se necesitan permisos de cámara para capturar el comprobante",
-                    [{ text: "OK", style: "default" }]
-                )
-                return
-            }
-
-            const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ["images"]
-            })
-
-            if (!result.canceled) {
-                setFotoComprobante(result.assets[0])
-                showSuccess("¡Foto Capturada!", "El comprobante ha sido capturado correctamente", [
-                    { text: "OK", style: "default" }
-                ])
+            if (uri && uri.startsWith("file://")) {
+                const fileInfo = await FileSystem.getInfoAsync(uri)
+                if (fileInfo.exists) {
+                    await FileSystem.deleteAsync(uri, { idempotent: true })
+                }
             }
         } catch (error) {
-            console.error("Error al capturar foto:", error)
-            showError("Error", "No se pudo capturar la foto. Inténtelo de nuevo.", [
+            console.log("No se pudo eliminar foto temporal:", error.message)
+        }
+    }
+
+    const capturarFoto = async () => {
+        try {
+            if (!permisosCamara?.granted) {
+                const resultado = await solicitarPermisosCamara()
+                if (!resultado.granted) {
+                    showError(
+                        "Permisos Requeridos",
+                        "Se necesitan permisos de cámara para capturar el comprobante",
+                        [{ text: "OK", style: "default" }]
+                    )
+                    return
+                }
+            }
+
+            if (fotoComprobante?.uri) {
+                await limpiarFotoTemporal(fotoComprobante.uri)
+                setFotoComprobante(null)
+            }
+
+            setCamaraLista(false)
+            setCamaraVisible(true)
+        } catch (error) {
+            console.error("Error al abrir cámara:", error)
+            showError("Error", "No se pudo abrir la cámara. Inténtelo de nuevo.", [
                 { text: "OK", style: "default" }
             ])
         }
     }
 
+    const tomarFoto = async () => {
+        if (!camaraRef.current || !camaraLista || camaraCargando) return
+
+        try {
+            setCamaraCargando(true)
+
+            const foto = await camaraRef.current.takePictureAsync({
+                exif: false,
+                base64: false
+            })
+
+            const manipulatedImage = await ImageManipulator.manipulateAsync(foto.uri, [], {
+                format: ImageManipulator.SaveFormat.WEBP,
+                compress: 0.8,
+                base64: false
+            })
+
+            if (foto.uri !== manipulatedImage.uri) await limpiarFotoTemporal(foto.uri)
+
+            setFotoComprobante({
+                uri: manipulatedImage.uri,
+                width: manipulatedImage.width,
+                height: manipulatedImage.height
+            })
+
+            showSuccess("¡Foto Capturada!", "El comprobante ha sido capturado correctamente", [
+                { text: "OK", style: "default" }
+            ])
+        } catch (error) {
+            showError("Error", "No se pudo capturar la foto. Inténtelo de nuevo.", [
+                { text: "OK", style: "default" }
+            ])
+        } finally {
+            setCamaraVisible(false)
+            setCamaraCargando(false)
+            setFlashActivo(false)
+        }
+    }
+
     const obtenerUbicacion = async () => {
         try {
-            // Solicitar permisos de ubicación
+            showWait("Obteniendo Ubicación", "Localizando GPS, por favor espere...")
+
             const { status } = await Location.requestForegroundPermissionsAsync()
 
             if (status !== "granted") {
+                hideWait()
                 showError(
                     "Permisos Requeridos",
                     "Se necesitan permisos de ubicación para registrar el pago",
@@ -427,22 +480,46 @@ export default function Pago() {
                 return null
             }
 
-            // Obtener ubicación actual
             const location = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.High,
-                timeout: 10000,
-                maximumAge: 60000
+                accuracy: Location.Accuracy.Balanced,
+                timeout: 20000,
+                maximumAge: 120000
             })
 
+            hideWait()
             return {
                 latitud: location.coords.latitude,
                 longitud: location.coords.longitude
             }
         } catch (error) {
-            console.error("Error al obtener ubicación:", error)
-            showError("Error", "No se pudo obtener la ubicación. Inténtelo de nuevo.", [
-                { text: "OK", style: "default" }
-            ])
+            hideWait()
+            let titulo = "Error de Ubicación"
+            let mensaje = "No se pudo obtener la ubicación."
+
+            if (error.message?.includes("timeout") || error.code === "E_TIMEOUT") {
+                titulo = "Tiempo de espera agotado"
+                mensaje =
+                    "No se pudo obtener la ubicación en el tiempo esperado. Verifique que el GPS esté activado."
+            } else if (
+                error.message?.includes("Location provider is unavailable") ||
+                error.code === "E_LOCATION_UNAVAILABLE"
+            ) {
+                titulo = "GPS No Disponible"
+                mensaje =
+                    "El servicio de ubicación no está disponible. Active el GPS en la configuración de su dispositivo."
+            } else if (error.message?.includes("network") || error.message?.includes("Network")) {
+                titulo = "Sin Señal"
+                mensaje =
+                    "No se pudo obtener la ubicación por falta de señal. Intente moverse a un área con mejor cobertura."
+            } else if (error.code === "E_LOCATION_SERVICES_DISABLED") {
+                titulo = "Servicios de Ubicación Desactivados"
+                mensaje = "Active los servicios de ubicación en la configuración de su dispositivo."
+            }
+
+            // Agregar el mensaje técnico al final para el personal en campo
+            mensaje += `\n\nError técnico: ${error.message || "Desconocido"}`
+
+            showError(titulo, mensaje, [{ text: "OK", style: "default" }])
             return null
         }
     }
@@ -467,7 +544,9 @@ export default function Pago() {
                         <View className="flex-1">
                             <Text className="text-2xl font-bold text-gray-800">Nuevo Pago</Text>
                             <Text className="text-base text-gray-600">
-                                Ingrese el número de crédito para buscar al cliente
+                                {esDetalleCredito
+                                    ? "Confirme los datos del pago"
+                                    : "Complete la información del pago"}
                             </Text>
                         </View>
                     </View>
@@ -485,13 +564,15 @@ export default function Pago() {
                                     </Text>
                                     <View
                                         className={`border-2 rounded-2xl p-4 ${
-                                            creditoValido === true
-                                                ? "border-green-400 bg-green-50"
-                                                : creditoValido === false
-                                                ? "border-red-400 bg-red-50"
-                                                : focusedField === "credito"
-                                                ? "border-blue-400 bg-blue-50"
-                                                : "border-gray-300 bg-white"
+                                            esDetalleCredito
+                                                ? "bg-gray-50 border-gray-200"
+                                                : creditoValido === true
+                                                  ? "border-green-400 bg-green-50"
+                                                  : creditoValido === false
+                                                    ? "border-red-400 bg-red-50"
+                                                    : focusedField === "credito"
+                                                      ? "border-blue-400 bg-blue-50"
+                                                      : "border-gray-300 bg-white"
                                         }`}
                                     >
                                         <View className="flex-row items-center">
@@ -499,19 +580,13 @@ export default function Pago() {
                                                 value={credito}
                                                 onChangeText={setCredito}
                                                 placeholder="Ej: 123456"
+                                                editable={!esDetalleCredito}
                                                 onFocus={() => setFocusedField("credito")}
                                                 onBlur={() => setFocusedField("")}
                                                 className="flex-1 text-2xl font-bold text-gray-800"
                                                 keyboardType="numeric"
                                                 maxLength={6}
                                             />
-                                            {credito.length === 6 && creditoValido === null && (
-                                                <MaterialIcons
-                                                    name="hourglass-empty"
-                                                    size={20}
-                                                    color="#3b82f6"
-                                                />
-                                            )}
                                             {credito.length === 6 && creditoValido !== null && (
                                                 <MaterialIcons
                                                     name={creditoValido ? "check-circle" : "error"}
@@ -526,7 +601,15 @@ export default function Pago() {
                                     <Text className="text-sm font-medium text-gray-700 mb-2">
                                         Ciclo
                                     </Text>
-                                    <View className="border-2 rounded-2xl p-4 bg-gray-50 border-gray-200">
+                                    <View
+                                        className={`border-2 rounded-2xl p-4 ${
+                                            esDetalleCredito
+                                                ? "bg-gray-50 border-gray-200"
+                                                : focusedField === "ciclo"
+                                                  ? "border-blue-400 bg-blue-50"
+                                                  : "border-gray-300 bg-white"
+                                        }`}
+                                    >
                                         <TextInput
                                             value={ciclo}
                                             onChangeText={setCiclo}
@@ -594,32 +677,39 @@ export default function Pago() {
                             </Pressable>
                             {showTipoSelect && (
                                 <View className="mt-2 border-2 border-gray-200 rounded-2xl bg-white shadow-sm">
-                                    {tiposPago.map((tipo, index) => (
-                                        <Pressable
-                                            key={tipo.codigo}
-                                            onPress={() => {
-                                                setTipoPago(tipo.codigo)
-                                                setShowTipoSelect(false)
-                                                setFocusedField("")
-                                            }}
-                                            className={`p-4 flex-row items-center justify-between ${
-                                                index < tiposPago.length - 1
-                                                    ? "border-b border-gray-100"
-                                                    : ""
-                                            }`}
-                                        >
-                                            <Text className="text-base font-medium text-gray-800 flex-1">
-                                                {tipo.descripcion}
-                                            </Text>
-                                            {tipoPago === tipo.codigo && (
-                                                <MaterialIcons
-                                                    name="check"
-                                                    size={20}
-                                                    color="#16a34a"
-                                                />
-                                            )}
-                                        </Pressable>
-                                    ))}
+                                    {tiposPago.map((tipo, index) => {
+                                        if (
+                                            infoCredito?.adicional == 1 &&
+                                            ["B", "E", "F", "A"].includes(tipo.codigo)
+                                        )
+                                            return null
+                                        return (
+                                            <Pressable
+                                                key={tipo.codigo}
+                                                onPress={() => {
+                                                    setTipoPago(tipo.codigo)
+                                                    setShowTipoSelect(false)
+                                                    setFocusedField("")
+                                                }}
+                                                className={`p-4 flex-row items-center justify-between ${
+                                                    index < tiposPago.length - 1
+                                                        ? "border-b border-gray-100"
+                                                        : ""
+                                                }`}
+                                            >
+                                                <Text className="text-base font-medium text-gray-800 flex-1">
+                                                    {tipo.descripcion}
+                                                </Text>
+                                                {tipoPago === tipo.codigo && (
+                                                    <MaterialIcons
+                                                        name="check"
+                                                        size={20}
+                                                        color="#16a34a"
+                                                    />
+                                                )}
+                                            </Pressable>
+                                        )
+                                    })}
                                 </View>
                             )}
                         </View>
@@ -732,17 +822,36 @@ export default function Pago() {
                     </Animated.View>
                 </ScrollView>
                 <View className="flex-row px-6 pt-2 border-t border-gray-200 justify-between">
-                    <View className="mb-4">
-                        <Pressable
-                            onPress={limpiarFormulario}
-                            className="bg-gray-100 rounded-2xl p-4"
-                        >
-                            <View className="flex-row items-center justify-center">
-                                <MaterialIcons name="refresh" size={20} color="#6B7280" />
-                                <Text className="text-gray-600 font-semibold ml-2">Limpiar</Text>
-                            </View>
-                        </Pressable>
-                    </View>
+                    {esDetalleCredito ? (
+                        <View className="mb-4">
+                            <Pressable
+                                onPress={() => {
+                                    limpiarFormulario()
+                                    router.push("/(screens)/DetalleCredito")
+                                }}
+                                className="bg-red-600 rounded-2xl p-4"
+                            >
+                                <View className="flex-row items-center justify-center">
+                                    <MaterialIcons name="close" size={20} color="#fff" />
+                                    <Text className="text-white font-semibold ml-2">Cancelar</Text>
+                                </View>
+                            </Pressable>
+                        </View>
+                    ) : (
+                        <View className="mb-4">
+                            <Pressable
+                                onPress={limpiarFormulario}
+                                className="bg-gray-100 rounded-2xl p-4"
+                            >
+                                <View className="flex-row items-center justify-center">
+                                    <MaterialIcons name="refresh" size={20} color="#6B7280" />
+                                    <Text className="text-gray-600 font-semibold ml-2">
+                                        Limpiar
+                                    </Text>
+                                </View>
+                            </Pressable>
+                        </View>
+                    )}
 
                     <Animated.View style={{ transform: [{ scale: scaleAnim }] }} className="mb-4">
                         <Pressable
@@ -758,6 +867,91 @@ export default function Pago() {
                 </View>
             </View>
             <CustomAlert ref={alertRef} />
+
+            {/* Modal de cámara in-app - evita lanzar actividad externa y crashes */}
+            {camaraVisible && (
+                <Modal
+                    visible={camaraVisible}
+                    animationType="slide"
+                    onRequestClose={() => {
+                        setCamaraVisible(false)
+                        setCamaraLista(false)
+                        setFlashActivo(false)
+                    }}
+                >
+                    <View className="flex-1 bg-black">
+                        <CameraView
+                            ref={camaraRef}
+                            style={{ flex: 1 }}
+                            facing="back"
+                            enableTorch={flashActivo}
+                            autofocus="on"
+                            onCameraReady={() => {
+                                setTimeout(() => setCamaraLista(true), 1000)
+                            }}
+                        />
+
+                        {/* Controles superpuestos */}
+                        <View className="absolute bottom-0 left-0 right-0 pb-10 pt-6 bg-black/50">
+                            {camaraCargando && (
+                                <Text className="text-white text-center mt-3 text-sm">
+                                    Procesando foto...
+                                </Text>
+                            )}
+                            <View className="flex-row justify-around items-center px-8">
+                                {/* Cancelar */}
+                                <Pressable
+                                    onPress={() => {
+                                        setCamaraVisible(false)
+                                        setCamaraLista(false)
+                                        setFlashActivo(false)
+                                    }}
+                                    className="bg-white/20 rounded-full p-4"
+                                >
+                                    <MaterialIcons name="close" size={28} color="white" />
+                                </Pressable>
+
+                                {/* Botón captura */}
+                                <Pressable
+                                    onPress={tomarFoto}
+                                    disabled={!camaraLista || camaraCargando}
+                                    className={`rounded-full p-1 border-4 border-white ${
+                                        camaraCargando ? "opacity-50" : ""
+                                    }`}
+                                >
+                                    <View className="bg-white rounded-full w-16 h-16" />
+                                </Pressable>
+
+                                {/* Toggle flash */}
+                                <Pressable
+                                    onPress={() => setFlashActivo((prev) => !prev)}
+                                    className={`rounded-full p-4 ${flashActivo ? "bg-yellow-400/90" : "bg-white/20"}`}
+                                >
+                                    <MaterialIcons
+                                        name={flashActivo ? "flash-on" : "flash-off"}
+                                        size={28}
+                                        color={flashActivo ? "#1a1a1a" : "white"}
+                                    />
+                                </Pressable>
+                            </View>
+                        </View>
+
+                        {/* Guía visual */}
+                        <View className="absolute top-12 left-0 right-0 items-center">
+                            {!camaraLista && (
+                                <Text className="text-white text-sm bg-black/40 px-4 py-2 rounded-full">
+                                    Iniciando cámara...
+                                </Text>
+                            )}
+                            {camaraLista && (
+                                <Text className="text-white text-sm bg-black/40 px-4 py-2 rounded-full">
+                                    Enfoca el comprobante y presiona el botón central
+                                </Text>
+                            )}
+                        </View>
+                    </View>
+                </Modal>
+            )}
         </View>
     )
 }
