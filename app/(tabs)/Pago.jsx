@@ -544,9 +544,7 @@ export default function Pago() {
                         <View className="flex-1">
                             <Text className="text-2xl font-bold text-gray-800">Nuevo Pago</Text>
                             <Text className="text-base text-gray-600">
-                                {esDetalleCredito
-                                    ? "Confirme los datos del pago"
-                                    : "Complete la información del pago"}
+                                Ingrese el número de crédito para buscar al cliente
                             </Text>
                         </View>
                     </View>
@@ -564,15 +562,13 @@ export default function Pago() {
                                     </Text>
                                     <View
                                         className={`border-2 rounded-2xl p-4 ${
-                                            esDetalleCredito
-                                                ? "bg-gray-50 border-gray-200"
-                                                : creditoValido === true
-                                                  ? "border-green-400 bg-green-50"
-                                                  : creditoValido === false
-                                                    ? "border-red-400 bg-red-50"
-                                                    : focusedField === "credito"
-                                                      ? "border-blue-400 bg-blue-50"
-                                                      : "border-gray-300 bg-white"
+                                            creditoValido === true
+                                                ? "border-green-400 bg-green-50"
+                                                : creditoValido === false
+                                                ? "border-red-400 bg-red-50"
+                                                : focusedField === "credito"
+                                                ? "border-blue-400 bg-blue-50"
+                                                : "border-gray-300 bg-white"
                                         }`}
                                     >
                                         <View className="flex-row items-center">
@@ -580,7 +576,6 @@ export default function Pago() {
                                                 value={credito}
                                                 onChangeText={setCredito}
                                                 placeholder="Ej: 123456"
-                                                editable={!esDetalleCredito}
                                                 onFocus={() => setFocusedField("credito")}
                                                 onBlur={() => setFocusedField("")}
                                                 className="flex-1 text-2xl font-bold text-gray-800"
@@ -601,15 +596,7 @@ export default function Pago() {
                                     <Text className="text-sm font-medium text-gray-700 mb-2">
                                         Ciclo
                                     </Text>
-                                    <View
-                                        className={`border-2 rounded-2xl p-4 ${
-                                            esDetalleCredito
-                                                ? "bg-gray-50 border-gray-200"
-                                                : focusedField === "ciclo"
-                                                  ? "border-blue-400 bg-blue-50"
-                                                  : "border-gray-300 bg-white"
-                                        }`}
-                                    >
+                                    <View className="border-2 rounded-2xl p-4 bg-gray-50 border-gray-200">
                                         <TextInput
                                             value={ciclo}
                                             onChangeText={setCiclo}
@@ -822,36 +809,17 @@ export default function Pago() {
                     </Animated.View>
                 </ScrollView>
                 <View className="flex-row px-6 pt-2 border-t border-gray-200 justify-between">
-                    {esDetalleCredito ? (
-                        <View className="mb-4">
-                            <Pressable
-                                onPress={() => {
-                                    limpiarFormulario()
-                                    router.push("/(screens)/DetalleCredito")
-                                }}
-                                className="bg-red-600 rounded-2xl p-4"
-                            >
-                                <View className="flex-row items-center justify-center">
-                                    <MaterialIcons name="close" size={20} color="#fff" />
-                                    <Text className="text-white font-semibold ml-2">Cancelar</Text>
-                                </View>
-                            </Pressable>
-                        </View>
-                    ) : (
-                        <View className="mb-4">
-                            <Pressable
-                                onPress={limpiarFormulario}
-                                className="bg-gray-100 rounded-2xl p-4"
-                            >
-                                <View className="flex-row items-center justify-center">
-                                    <MaterialIcons name="refresh" size={20} color="#6B7280" />
-                                    <Text className="text-gray-600 font-semibold ml-2">
-                                        Limpiar
-                                    </Text>
-                                </View>
-                            </Pressable>
-                        </View>
-                    )}
+                    <View className="mb-4">
+                        <Pressable
+                            onPress={limpiarFormulario}
+                            className="bg-gray-100 rounded-2xl p-4"
+                        >
+                            <View className="flex-row items-center justify-center">
+                                <MaterialIcons name="refresh" size={20} color="#6B7280" />
+                                <Text className="text-gray-600 font-semibold ml-2">Limpiar</Text>
+                            </View>
+                        </Pressable>
+                    </View>
 
                     <Animated.View style={{ transform: [{ scale: scaleAnim }] }} className="mb-4">
                         <Pressable
